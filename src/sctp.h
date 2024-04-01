@@ -138,7 +138,7 @@ typedef enum SctpDataPpid {
 
 typedef struct Sctp Sctp;
 
-typedef struct Sctp {
+struct Sctp {
 
   struct socket *sock;
 
@@ -150,13 +150,13 @@ typedef struct Sctp {
   DtlsSrtp *dtls_srtp;
   Buffer **data_rb;
   /* datachannel */
-  void (*onmessasge)(char *msg, size_t len, void *userdata);
+  void (*onmessage)(char *msg, size_t len, void *userdata);
   void (*onopen)(void *userdata);
   void (*onclose)(void *userdata);
 
   void *userdata;
   uint8_t buf[CONFIG_MTU];
-} Sctp;
+};
 
 
 Sctp* sctp_create(DtlsSrtp *dtls_srtp);
@@ -171,7 +171,7 @@ void sctp_incoming_data(Sctp *sctp, char *buf, size_t len);
 
 int sctp_outgoing_data(Sctp *sctp, char *buf, size_t len, SctpDataPpid ppid);
 
-void sctp_onmessage(Sctp *sctp, void (*onmessasge)(char *msg, size_t len, void *userdata));
+void sctp_onmessage(Sctp *sctp, void (*onmessage)(char *msg, size_t len, void *userdata));
 
 void sctp_onopen(Sctp *sctp, void (*onopen)(void *userdata));
 

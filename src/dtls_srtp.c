@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
+#include "platform/socket.h"
+#include "platform/misc.h"
 
 #include "mbedtls/ssl.h"
 #include "dtls_srtp.h"
@@ -46,7 +46,7 @@ int dtls_srtp_udp_recv(void *ctx, uint8_t *buf, size_t len) {
 
   while ((ret = udp_socket_recvfrom(udp_socket, &udp_socket->bind_addr, buf, len)) <= 0) {
 
-    usleep(1000);
+    platform_sleep_ms(1);
   }
 
   LOGD("dtls_srtp_udp_recv (%d)", ret);
@@ -87,8 +87,12 @@ static int dtls_srtp_selfsign_cert(DtlsSrtp *dtls_srtp) {
   int ret;
 
   mbedtls_x509write_cert crt;
-
-  mbedtls_mpi serial;
+  
+  #if ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 2)
+    char *serial = "peer";
+  #else
+    mbedtls_mpi serial;
+  #endif
 
   unsigned char *cert_buf = (unsigned char *) malloc(RSA_KEY_LENGTH * 2);
 
@@ -116,11 +120,13 @@ static int dtls_srtp_selfsign_cert(DtlsSrtp *dtls_srtp) {
 
   mbedtls_x509write_crt_set_issuer_name(&crt, "CN=dtls_srtp");
 
-  mbedtls_mpi_init(&serial);
-
-  mbedtls_mpi_fill_random(&serial, 16, mbedtls_ctr_drbg_random, &dtls_srtp->ctr_drbg);
-
-  mbedtls_x509write_crt_set_serial(&crt, &serial);
+  #if ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 2)
+    mbedtls_x509write_crt_set_serial_raw(&crt, (unsigned char *) serial, strlen(serial));
+  #else
+    mbedtls_mpi_init(&serial);
+    mbedtls_mpi_fill_random(&serial, 16, mbedtls_ctr_drbg_random, &dtls_srtp->ctr_drbg);
+    mbedtls_x509write_crt_set_serial(&crt, &serial);
+  #endif
 
   mbedtls_x509write_crt_set_validity(&crt, "20180101000000", "20280101000000");
 
@@ -134,13 +140,32 @@ static int dtls_srtp_selfsign_cert(DtlsSrtp *dtls_srtp) {
   mbedtls_x509_crt_parse(&dtls_srtp->cert, cert_buf, 2*RSA_KEY_LENGTH);
 
   mbedtls_x509write_crt_free(&crt);
-
-  mbedtls_mpi_free(&serial);
+  
+  #if ESP_IDF_VERSION > ESP_IDF_VERSION_VAL(5, 0, 2)
+  #else
+    mbedtls_mpi_free(&serial);
+  #endif
 
   free(cert_buf);
 
   return ret;
 }
+
+#ifdef DTLS_SRTP_DEBUG_MBEDTLS
+static void dtls_srtp_mbedtls_debug_cb(void* ctx, int level, const char* file, int line, const char* str) {
+    const char *p, *basename;
+    (void) ctx;
+
+    /* Extract basename from file */
+    for(p = basename = file; *p != '\0'; p++) {
+        if(*p == '/' || *p == '\\') {
+            basename = p + 1;
+        }
+    }
+
+    printf("mbedtls %s:%04d: |%d| %s", basename, line, level, str);
+}
+#endif
 
 int dtls_srtp_init(DtlsSrtp *dtls_srtp, DtlsSrtpRole role, void *user_data) {
 
@@ -167,6 +192,10 @@ int dtls_srtp_init(DtlsSrtp *dtls_srtp, DtlsSrtpRole role, void *user_data) {
   mbedtls_ctr_drbg_init(&dtls_srtp->ctr_drbg);
 
   dtls_srtp_selfsign_cert(dtls_srtp);
+
+#ifdef DTLS_SRTP_DEBUG_MBEDTLS
+  mbedtls_ssl_conf_dbg(&dtls_srtp->conf, dtls_srtp_mbedtls_debug_cb, NULL);
+#endif
 
 // XXX: Not sure if this is needed
 #if 0

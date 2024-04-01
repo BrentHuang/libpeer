@@ -1,9 +1,11 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "config.h"
 
 #define LEVEL_ERROR 0x00

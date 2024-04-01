@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <inttypes.h>
+#include "platform/socket.h"
 
 #include "sctp.h"
 #include "agent.h"
@@ -547,7 +547,7 @@ void peer_connection_oniceconnectionstatechange(PeerConnection *pc,
 }
 
 void peer_connection_ondatachannel(PeerConnection *pc,
- void (*onmessasge)(char *msg, size_t len, void *userdata),
+ void (*onmessage)(char *msg, size_t len, void *userdata),
  void (*onopen)(void *userdata),
  void (*onclose)(void *userdata)) {
 
@@ -555,7 +555,7 @@ void peer_connection_ondatachannel(PeerConnection *pc,
 
     sctp_onopen(&pc->sctp, onopen);
     sctp_onclose(&pc->sctp, onclose);
-    sctp_onmessage(&pc->sctp, onmessasge);
+    sctp_onmessage(&pc->sctp, onmessage);
   }
 }
 

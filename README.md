@@ -29,11 +29,11 @@ libpeer is a WebRTC implementation written in C, developed with BSD socket. The 
 ### Getting Started
 ```bash
 $ sudo apt -y install git cmake
+$ sudo pip install jsonschema
 $ git clone --recursive https://github.com/sepfy/libpeer
 $ cd libpeer
-$ ./build-third-party.sh
-$ mkdir cmake
-$ cd cmake
+$ mkdir build
+$ cd build
 $ cmake ..
 $ make
 $ wget http://www.live555.com/liveMedia/public/264/test.264 # Download test video file
