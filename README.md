@@ -46,3 +46,8 @@ $ ./examples/sample/sample
 - [ESP32-S3](https://github.com/sepfy/libpeer/tree/main/examples/esp32s3): Push video and audio to media server
 - [Raspberry Pi](https://github.com/sepfy/libpeer/tree/main/examples/raspberrypi): Video and two-way audio stream
 
+### todo 加入 rtcp 控制协议，推流端也要根据控制信息做一些逻辑
+
+<https://github.com/sepfy/libpeer/issues/43>
+<https://github.com/sepfy/libpeer/issues/26>
+<https://github.com/seekfor/libqos>
